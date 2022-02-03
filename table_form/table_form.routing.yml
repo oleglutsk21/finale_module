@@ -1,7 +1,7 @@
-oleg.form:
-  path: '/oleg'
+table_form:
+  path: '/table-form'
   defaults:
-    _form: '\Drupal\oleg\Form\OlegTableForm'
+    _form: '\Drupal\table_form\Form\TableForm'
     _title: 'Table form'
   requirements:
     _permission: 'access content'

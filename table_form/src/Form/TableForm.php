@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\oleg\Form;
+namespace Drupal\table_form\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -8,7 +8,7 @@ use Drupal\Core\Form\FormStateInterface;
 /**
  * Provides form with tables.
  */
-class OlegTableForm extends FormBase {
+class TableForm extends FormBase {
 
   /**
    * List of keys for form fields.
@@ -67,7 +67,7 @@ class OlegTableForm extends FormBase {
    * {@inheritdoc}
    */
   public function getFormId(): string {
-    return 'oleg_table_form';
+    return 'table_form';
   }
 
   /**
@@ -99,8 +99,9 @@ class OlegTableForm extends FormBase {
         'wrapper' => 'form-wrapper',
       ],
     ];
-    // Calling the function for creating a table.
+
     $this->createTable($form, $form_state);
+
     // Button for submitting.
     $form['submit'] = [
       '#type' => 'submit',
@@ -111,7 +112,7 @@ class OlegTableForm extends FormBase {
       ],
     ];
     // Connecting libraries to the form.
-    $form['#attached']['library'][] = 'oleg/oleg.form';
+    $form['#attached']['library'][] = 'table_form/table_form';
     return $form;
   }
 
@@ -121,49 +122,49 @@ class OlegTableForm extends FormBase {
   public function createTable(&$form, FormStateInterface $form_state) {
     for ($i = 0; $i < $this->tablesCount; $i++) {
       // Table ID.
-      $tableId = 'table_' . $i;
-      $form[$tableId] = [
+      $table_id = 'table_' . $i;
+      $form[$table_id] = [
         '#type' => 'table',
         '#tree' => TRUE,
         '#title' => 'Table' . ($i + 1),
         '#header' => self::TABLE_HEADER,
       ];
       // Calling the function for creating a row for table.
-      $this->createTableRow($tableId, $form, $form_state);
+      $this->createTableRow($table_id, $form, $form_state);
     }
   }
 
   /**
    * Provides function for creating a row for a table.
    *
-   * @param string $tableId
+   * @param string $table_id
    *   Table ID.
    * @param array $form
    *   An associative array containing the structure of the form.
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The current state of the form.
    */
-  public function createTableRow(string $tableId, array &$form, FormStateInterface $form_state) {
+  public function createTableRow(string $table_id, array &$form, FormStateInterface $form_state) {
     for ($i = $this->rowsCount; $i > 0; $i--) {
       // Row ID.
-      $rowId = 'row_' . $i;
+      $row_id = 'row_' . $i;
       for ($j = 0; $j < count(self::TABLE_HEADER); $j++) {
         // Inactive form field for year name.
         if (self::TABLE_HEADER[$j] === 'Year') {
-          $form[$tableId][$rowId][self::TABLE_HEADER[$j]] = [
+          $form[$table_id][$row_id][self::TABLE_HEADER[$j]] = [
             '#type' => 'number',
-            '#value' => (date('Y') + 1 - $i),
+            '#value' => date('Y') + 1 - $i,
             '#disabled' => TRUE,
           ];
         }
         elseif (in_array(self::TABLE_HEADER[$j], self::DISABLED_INPUT_KEYS, TRUE)) {
           // Inactive form fields for estimated values.
-          $form[$tableId][$rowId][self::TABLE_HEADER[$j]] = [
+          $form[$table_id][$row_id][self::TABLE_HEADER[$j]] = [
             '#type' => 'number',
             '#step' => 0.01,
             '#value' => $form_state->getValue([
-              $tableId,
-              $rowId,
+              $table_id,
+              $row_id,
               self::TABLE_HEADER[$j]
             ], ''),
             '#disabled' => TRUE,
@@ -171,7 +172,7 @@ class OlegTableForm extends FormBase {
         }
         else {
           // Form fields for data entry.
-          $form[$tableId][$rowId][self::TABLE_HEADER[$j]] = [
+          $form[$table_id][$row_id][self::TABLE_HEADER[$j]] = [
             '#type' => 'number',
           ];
         }
@@ -219,27 +220,28 @@ class OlegTableForm extends FormBase {
     $result = [];
     for ($i = 0; $i < $this->tablesCount; $i++) {
       // Table ID.
-      $tableId = 'table_' . $i;
+      $table_id = 'table_' . $i;
       // Processing of all values.
       foreach ($values as $key => $element) {
         // Selection of the necessary values from the form.
-        if ($key === $tableId) {
+        if ($key === $table_id) {
           $result[$key] = $element;
         }
       }
     }
+
     // Processing of values.
-    foreach ($result as $tableId => $table) {
-      foreach ($table as $rowId => $row) {
+    foreach ($result as $table_id => $table) {
+      foreach ($table as $row_id => $row) {
         foreach ($row as $key => $value) {
           // Delete calculated values.
           if (in_array($key, self::DISABLED_INPUT_KEYS, TRUE) || $key === 'Year') {
             unset($row[$key]);
           }
         }
-        $table[$rowId] = $row;
+        $table[$row_id] = $row;
       }
-      $result[$tableId] = $table;
+      $result[$table_id] = $table;
     }
     return $result;
   }
@@ -286,37 +288,35 @@ class OlegTableForm extends FormBase {
     // Obtaining processed values using the function.
     $result = $this->getResultFromForm($form_state);
     // Processing of values.
-    foreach ($result as $tableId => $table) {
-      foreach ($table as $rowId => $row) {
+    foreach ($result as $table_id => $table) {
+      foreach ($table as $row_id => $row) {
         foreach ($row as $key => $value) {
           // Checks if tables are completed for the same period.
           // Starting check from the second table.
-          if ($tableId !== 'table_0' &&
-            $this->isNotEqualArray($row, $result['table_0'][$rowId]) &&
-            $this->rowsCount == 1) {
-            $form_state->setErrorByName($tableId, $this->t('The tables are filled for different periods.'));
+          if ($table_id !== 'table_0' && $this->isNotEqualArray($row, $result['table_0'][$row_id])) {
+            $form_state->setErrorByName($table_id, $this->t('The tables are filled for different periods.'));
           }
           // For each table, stored all rows in one array.
-          $tables[$tableId][] = $value;
+          $tables[$table_id][] = $value;
           $index = 0;
           // The intermediate array.
-          $buffer[$tableId] = $tables[$tableId];
+          $buffer[$table_id] = $tables[$table_id];
           // Deleting empty values before the first entered value for each table.
-          while (empty($buffer[$tableId][$index]) && $index < count($tables[$tableId]) && $buffer[$tableId][$index] !== '0') {
-            unset($buffer[$tableId][$index]);
+          while (empty($buffer[$table_id][$index]) && $index < count($tables[$table_id]) && $buffer[$table_id][$index] !== '0') {
+            unset($buffer[$table_id][$index]);
             $index++;
           }
           // Re-indexed arrays.
-          $tablesReindex[$tableId] = array_values($buffer[$tableId]);
-          for ($i = 0; $i < count($buffer[$tableId]); $i++) {
-            if (empty($tablesReindex[$tableId][$i]) && $tablesReindex[$tableId][$i] !== '0') {
-              unset($tablesReindex[$tableId][$i]);
+          $tablesReindex[$table_id] = array_values($buffer[$table_id]);
+          for ($i = 0; $i < count($buffer[$table_id]); $i++) {
+            if (empty($tablesReindex[$table_id][$i]) && $tablesReindex[$table_id][$i] !== '0') {
+              unset($tablesReindex[$table_id][$i]);
             }
           }
           // Checking the array for each table for gaps using the function.
           foreach ($tablesReindex as $item) {
             if ($this->arrayIsNotList($item)) {
-              $form_state->setErrorByName($tableId, $this->t('The row should not contain spaces between months'));
+              $form_state->setErrorByName($table_id, $this->t('The row should not contain spaces between months'));
             }
           }
         }
@@ -332,15 +332,15 @@ class OlegTableForm extends FormBase {
     $result = $this->getResultFromForm($form_state);
     // Checking for errors in the form.
     if (!$form_state->hasAnyErrors()) {
-      // Processing of values.
-      foreach ($result as $tableId => $table) {
-        foreach ($table as $rowId => $value) {
+      foreach ($result as $table_id => $table) {
+        foreach ($table as $row_id => $value) {
           // Calculating the data.
           $q1 = (($value['Jan'] + $value['Feb'] + $value['Mar']) + 1) / 3;
           $q2 = (($value['Apr'] + $value['May'] + $value['Jun']) + 1) / 3;
           $q3 = (($value['Jul'] + $value['Aug'] + $value['Sep']) + 1) / 3;
           $q4 = (($value['Oct'] + $value['Nov'] + $value['Dec']) + 1) / 3;
           $ytd = (($q1 + $q2 + $q3 + $q4) + 1) / 4;
+
           // Rounding of values.
           $q1 = round($q1, 2);
           $q2 = round($q2, 2);
@@ -348,11 +348,11 @@ class OlegTableForm extends FormBase {
           $q4 = round($q4, 2);
           $ytd = round($ytd, 2);
           // Putting calculated values to the form.
-          $form_state->setValue([$tableId, $rowId, 'Q1'], $q1);
-          $form_state->setValue([$tableId, $rowId, 'Q2'], $q2);
-          $form_state->setValue([$tableId, $rowId, 'Q3'], $q3);
-          $form_state->setValue([$tableId, $rowId, 'Q4'], $q4);
-          $form_state->setValue([$tableId, $rowId, 'YTD'], $ytd);
+          $form_state->setValue([$table_id, $row_id, 'Q1'], $q1);
+          $form_state->setValue([$table_id, $row_id, 'Q2'], $q2);
+          $form_state->setValue([$table_id, $row_id, 'Q3'], $q3);
+          $form_state->setValue([$table_id, $row_id, 'Q4'], $q4);
+          $form_state->setValue([$table_id, $row_id, 'YTD'], $ytd);
         }
       }
       \Drupal::messenger()->addStatus($this->t('Valid'));
