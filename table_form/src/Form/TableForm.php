@@ -13,9 +13,9 @@ class TableForm extends FormBase {
   /**
    * List of keys for form fields.
    *
-   * @const
+   * @var array
    */
-  const TABLE_HEADER = [
+  protected array $tableHeader = [
     'Year',
     'Jan',
     'Feb',
@@ -39,9 +39,9 @@ class TableForm extends FormBase {
   /**
    * List of keys for inactive form fields.
    *
-   * @const
+   * @var array
    */
-  const DISABLED_INPUT_KEYS = [
+  protected array $disableInputKeys = [
     'Q1',
     'Q2',
     'Q3',
@@ -127,7 +127,7 @@ class TableForm extends FormBase {
         '#type' => 'table',
         '#tree' => TRUE,
         '#title' => 'Table' . ($i + 1),
-        '#header' => self::TABLE_HEADER,
+        '#header' => $this->tableHeader,
       ];
       // Calling the function for creating a row for table.
       $this->createTableRow($table_id, $form, $form_state);
@@ -148,31 +148,31 @@ class TableForm extends FormBase {
     for ($i = $this->rowsCount; $i > 0; $i--) {
       // Row ID.
       $row_id = 'row_' . $i;
-      for ($j = 0; $j < count(self::TABLE_HEADER); $j++) {
+      for ($j = 0; $j < count($this->tableHeader); $j++) {
         // Inactive form field for year name.
-        if (self::TABLE_HEADER[$j] === 'Year') {
-          $form[$table_id][$row_id][self::TABLE_HEADER[$j]] = [
+        if ($this->tableHeader[$j] === 'Year') {
+          $form[$table_id][$row_id][$this->tableHeader[$j]] = [
             '#type' => 'number',
             '#value' => date('Y') + 1 - $i,
             '#disabled' => TRUE,
           ];
         }
-        elseif (in_array(self::TABLE_HEADER[$j], self::DISABLED_INPUT_KEYS, TRUE)) {
+        elseif (in_array($this->tableHeader[$j], $this->disableInputKeys, TRUE)) {
           // Inactive form fields for estimated values.
-          $form[$table_id][$row_id][self::TABLE_HEADER[$j]] = [
+          $form[$table_id][$row_id][$this->tableHeader[$j]] = [
             '#type' => 'number',
             '#step' => 0.01,
             '#value' => $form_state->getValue([
               $table_id,
               $row_id,
-              self::TABLE_HEADER[$j]
+              $this->tableHeader[$j]
             ], ''),
             '#disabled' => TRUE,
           ];
         }
         else {
           // Form fields for data entry.
-          $form[$table_id][$row_id][self::TABLE_HEADER[$j]] = [
+          $form[$table_id][$row_id][$this->tableHeader[$j]] = [
             '#type' => 'number',
           ];
         }
@@ -235,7 +235,7 @@ class TableForm extends FormBase {
       foreach ($table as $row_id => $row) {
         foreach ($row as $key => $value) {
           // Delete calculated values.
-          if (in_array($key, self::DISABLED_INPUT_KEYS, TRUE) || $key === 'Year') {
+          if (in_array($key, $this->disableInputKeys, TRUE) || $key === 'Year') {
             unset($row[$key]);
           }
         }
